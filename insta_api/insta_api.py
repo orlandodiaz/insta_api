@@ -38,14 +38,14 @@ class InstaAPI:
         self.status = None
         self.msg = None
 
-    def _make_request(self, endpoint='', post=None, params=None, msg=''):
+    def _make_request(self, endpoint, data=None, params=None, msg='', post=False):
         resp = None
         try:
-            if post is None:
+            if not data and not post:
                 resp = self.ses.get(base_endpoint + endpoint, headers=self.ses.headers, params=params)
                 resp.raise_for_status()
             else:
-                resp = self.ses.post(base_endpoint + endpoint, data=post,
+                resp = self.ses.post(base_endpoint + endpoint, data=data,
                                      headers=self.ses.headers, allow_redirects=False)
                 resp.raise_for_status()
 
@@ -86,7 +86,7 @@ class InstaAPI:
 
         login_data = {'username': username, 'password': password}
 
-        login_resp = self._make_request(login_endpoint, login_data, None, 'Login request sent')
+        login_resp = self._make_request(login_endpoint,data=login_data, msg="Login request sent")
         log.debug('Login response: {}'.format(login_resp.text))
 
         if login_resp.json()['authenticated']:
@@ -105,7 +105,7 @@ class InstaAPI:
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
 
-        self._make_request(like_endpoint.format(media_id=media_id), '', None, 'Liked %s' % media_id)
+        self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
 
     @login_required
     def unlike(self, inpt):
@@ -115,19 +115,31 @@ class InstaAPI:
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
 
-        self._make_request(unlike_endpoint.format(media_id=media_id), '', None, 'Unliked %s' % media_id)
+        self._make_request(unlike_endpoint.format(media_id=media_id), post=True, msg='Unliked %s' % media_id)
 
     @login_required
     def follow_by_id(self, user_id):
         """ Follow an user by their unique id, not their username!"""
         print(self.ses.cookies.get_dict())
-        self._make_request(follow_endpoint.format(user_id=user_id), '', None, 'Followed %s' % user_id)
+        self._make_request(follow_endpoint.format(user_id=user_id), post=True, msg='Followed %s' % user_id)
 
     @login_required
     def follow_by_name(self, username):
         """ Follow an user by their unique username"""
 
         self.follow_by_id(self.get_user_info(username)['id'])
+
+    @login_required
+    def unfollow_by_id(self, user_id):
+        """ Unfollow an user by their unique id, not their username!"""
+        print(self.ses.cookies.get_dict())
+        self._make_request(unfollow_endpoint.format(user_id=user_id), post=True, msg='Unfollowed %s' % user_id)
+
+    @login_required
+    def unfollow_by_name(self, username):
+        """ Unfollow an user by their unique username"""
+
+        self.unfollow_by_id(self.get_user_info(username)['id'])
 
     @login_required
     def get_hash_feed(self, hashtag):
@@ -138,7 +150,7 @@ class InstaAPI:
             'variables': '{"tag_name": "%s", "first": 6}' % hashtag
         }
 
-        resp = self._make_request(graphql_endpoint, None, params=params, msg='Hash feed was received')
+        resp = self._make_request(graphql_endpoint, params=params, msg='Hash feed was received')
 
         data = resp.json()
 
@@ -151,8 +163,7 @@ class InstaAPI:
     def get_user_info(self, username):
         """ Gets information about an user => json response"""
 
-        resp = self._make_request(user_info_endpoint.format(username=username),
-                                 post=None,params=None, msg='User info data received' )
+        resp = self._make_request(user_info_endpoint.format(username=username), msg='User info data received' )
         return resp.json()['graphql']['user']
 
     @login_required
@@ -218,7 +229,7 @@ class InstaAPI:
                 ('caption', caption),
             ]
 
-            self._make_request(post_photo_endpoint2, data,None, 'Photo uploaded was successfully published')
+            self._make_request(post_photo_endpoint2, data, msg='Photo uploaded was successfully published')
 
     @login_required
     def delete_post(self, inpt):
@@ -231,7 +242,7 @@ class InstaAPI:
             # resp = self._make_request(like_endpoint.format(media_id=media_id), '', None, 'Liked %s' % media_id)
 
         assert 'x-csrftoken' in self.ses.headers
-        self._make_request(delete_endpoint.format(media_id=media_id), '', None, 'Deleted %s' % media_id)
+        self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
 
     def logout(self):
         """ Logout current user. All other API calls will not work after this method is called => response"""

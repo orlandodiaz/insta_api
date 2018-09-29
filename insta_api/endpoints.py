@@ -8,6 +8,7 @@ unlike_endpoint = '/web/likes/{media_id}/unlike/'
 delete_endpoint = '/create/{media_id}/delete/'
 
 follow_endpoint = '/web/friendships/{user_id}/follow/'
+unfollow_endpoint = '/web/friendships/{user_id}/unfollow/'
 
 post_photo_endpoint1 = '/create/upload/photo/'
 post_photo_endpoint2 = '/create/configure/'
