@@ -44,6 +44,10 @@ class TestEndpoints:
         resp = insta.ses.head(base_endpoint+follow_endpoint.format(user_id="0"))
         assert resp.status_code != 404
 
+    def test_unfollow_endpoint(self, insta):
+        resp = insta.ses.head(base_endpoint+unfollow_endpoint.format(user_id="0"))
+        assert resp.status_code != 404
+
     def test_graphql_endpoint(self, insta):
         resp = insta.ses.head(base_endpoint+graphql_endpoint)
         assert resp.status_code != 404

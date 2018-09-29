@@ -26,14 +26,20 @@ class TestInstaAPI:
         assert insta.last_resp.ok
 
     def test_follow_by_name(self, insta):
-        print(insta.ses.cookies.get_dict())
 
         insta.follow_by_name('insta_api_user')
 
         assert insta.last_resp.ok
 
+    def test_unfollow_by_name(self, insta):
+
+        insta.unfollow_by_name('insta_api_user')
+
+        assert insta.last_resp.ok
+
     def test_unlike(self, insta):
         """ Test the like is working"""
+
         insta.unlike('BoLcMrelK4k')
 
         assert insta.last_resp.ok
