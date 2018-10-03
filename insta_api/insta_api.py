@@ -1,7 +1,8 @@
-import requests
-from requests_toolbelt import MultipartEncoder
 import time
+import requests
 from requests import RequestException
+from requests_toolbelt import MultipartEncoder
+from json import JSONDecodeError
 
 if __name__ == '__main__':
     from endpoints import *
@@ -124,6 +125,13 @@ class InstaAPI:
         self._make_request(follow_endpoint.format(user_id=user_id), post=True, msg='Followed %s' % user_id)
 
     @login_required
+    def follow(self, username):
+        """ Follow an user by their unique username"""
+
+        self.follow_by_id(self.get_user_info(username)['id'])
+
+
+    @login_required
     def follow_by_name(self, username):
         """ Follow an user by their unique username"""
 
@@ -142,22 +150,28 @@ class InstaAPI:
         self.unfollow_by_id(self.get_user_info(username)['id'])
 
     @login_required
-    def get_hash_feed(self, hashtag):
+    def get_hash_feed(self, hashtag, pages=4):
         """ returns dictionary from channel containing newest posts"""
 
         params = {
             'query_hash': get_hashinfo_query,
-            'variables': '{"tag_name": "%s", "first": 6}' % hashtag
+            'variables': '{"tag_name": "%s", "first": %d}' % (hashtag, pages)
         }
 
         resp = self._make_request(graphql_endpoint, params=params, msg='Hash feed was received')
 
-        data = resp.json()
+        try:
+            data = resp.json() #=> Possible JSONDecoderror
+        except JSONDecodeError:
+            # Server might return incomplete JSON response or requests might be truncating them.
+            # The content-length does not match in some instances
+            log.debug('Received an incomplete JSON response')
+            pass
+        else:
+            if not data['data']['hashtag']:
+                raise ValueError("Received no data for hashstag. Most likely an invalid hashtag")
 
-        if not data['data']['hashtag']:
-            raise ValueError("Received no data for hashstag. Most likely an invalid hashtag")
-
-        return data['data']['hashtag']['edge_hashtag_to_media']['edges']
+            return data['data']['hashtag']['edge_hashtag_to_media']['edges']
 
     @login_required
     def get_user_info(self, username):
@@ -233,7 +247,7 @@ class InstaAPI:
 
     @login_required
     def delete_post(self, inpt):
-        """ Delete a single post. media_id or shortcode. => status code """
+        """ Delete a single post. media_id or shortcode. """
 
         media_id = inpt
         if isinstance(inpt, str) and not inpt.isdigit():
