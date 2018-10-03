@@ -47,4 +47,4 @@ def disable_logging():
     root_logger.setLevel(logging.WARNING)
 
 configure_logger()
-log_to_file("../logs/insta_api_new_log")
+# log_to_file("../logs/insta_api_new_log")
