@@ -1,17 +1,13 @@
+import pytest
 from insta_api.insta_api import InstaAPI
 from insta_api.endpoints import *
-from tests.testing_config import username, password
-
-import os
-import pytest
 
 
 @pytest.fixture(scope="module")
 def insta():
     insta = InstaAPI()
-
     yield insta
-    os.system('say teardown')
+    insta.close_session()
 
 
 class TestEndpoints:

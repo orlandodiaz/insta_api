@@ -1,9 +1,6 @@
-from insta_api.insta_api import InstaAPI
-import time
-import os
-from tests.testing_config import username, password
 import pytest
-import time
+from insta_api.insta_api import InstaAPI
+from tests.testing_config import username, password
 
 
 @pytest.fixture(scope="class")
@@ -52,15 +49,13 @@ class TestInstaAPI:
 
     def test_upload_photo(self, insta):
         insta.post_photo('../resources/travel.jpeg', 'no caption')
+
         assert insta.last_resp.ok
 
     def test_delete_post(self, insta):
         insta.delete_post(1876730039681510757)
-        assert insta.last_resp.ok
 
-    # def test_logout(self, insta):
-    #     resp = insta.logout()
-    #     assert insta.last_resp.ok
+        assert insta.last_resp.ok
 
     def test_get_hash_feed(self, insta):
         hashtag_data = insta.get_hash_feed('test')
