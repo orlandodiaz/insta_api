@@ -4,7 +4,6 @@ root_logger = logging.getLogger('urllib3')
 
 
 def configure_logger():
-    print(log.handlers)
     if not log.handlers:
         print(logging.getLogger('__name__').handlers)
 
