@@ -79,6 +79,7 @@ class InstaAPI:
         visit_resp = self._make_request('', None, None, 'Visit was successful.')
         assert 'csrftoken' in visit_resp.cookies.get_dict()
         self.ses.headers.update({'x-csrftoken': visit_resp.cookies['csrftoken']})
+
         log.debug("Session headers: {}".format(self.ses.headers))
         log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
 
@@ -205,7 +206,18 @@ class InstaAPI:
 
     @login_required
     def post_photo(self, photo_path, caption="No caption"):
-        """ Post a photo to your feed"""
+        """ Post a photo to your feed
+
+        Args:
+            photo_path: Path to photo
+            caption: The caption for the photo to be posted
+
+        Returns: None
+        Examples:
+
+            >> insta.post_photo('beach.jpg', caption="Swimming in the beach")
+
+        """
 
         with open(photo_path, 'rb') as photo:
             upload_id = str(int(time.time() * 1000))
