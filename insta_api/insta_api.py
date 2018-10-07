@@ -53,7 +53,6 @@ class InstaAPI:
         Returns:
             Response: Requests response object
 
-
         """
         resp = None
         try:
@@ -82,7 +81,6 @@ class InstaAPI:
 
     @property
     def is_loggedin(self):
-        # print(self.ses.cookies.get_dict())
         return 'sessionid' in self.ses.cookies.get_dict()
 
     def close_session(self):
@@ -99,6 +97,16 @@ class InstaAPI:
         log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
 
     def login(self, username, password):
+        """
+
+        Args:
+            username (str): Your instagram username
+            password (str): Your instagram password
+
+        Raises:
+            LoginAuthenticationError: Raised when authentication has failed
+        """
+
         self._get_init_csrftoken()
 
         login_data = {'username': username, 'password': password}
@@ -126,7 +134,7 @@ class InstaAPI:
 
     @login_required
     def unlike(self, inpt):
-        """ Like a single post. media_id or shortcode. => status code """
+        """ Like a single post. media_id or shortcode"""
 
         media_id=inpt
         if isinstance(inpt, str) and not inpt.isdigit():
@@ -172,7 +180,6 @@ class InstaAPI:
         Args:
             hashtag (str): The hashtag to be used. Ex. #love, #fashion, #beautiful, etc
             pages (int): The number of pages to crawl. Recommended to not go above four
-
         Returns:
             dict: Hashtag dictionary containing information about a specific hash
 
@@ -199,14 +206,27 @@ class InstaAPI:
 
     @login_required
     def get_user_info(self, username):
-        """ Gets information about an user => json response"""
+        """  Gets information about an user
+
+        Args:
+            username (str): The actual literal username
+        Returns:
+            dict: JSON decoded response
+        """
 
         resp = self._make_request(user_info_endpoint.format(username=username), msg='User info data received' )
         return resp.json()['graphql']['user']
 
     @login_required
     def get_user_info_by_id(self, user_id):
-        """ Gets information about an user => json response"""
+        """ Gets information about an user
+
+        Args:
+            user_id (int): The user_id of the user.
+        Returns:
+            dict: JSON decoded response
+
+        """
 
         params = {
             'query_hash': get_userinfo_query,
@@ -232,8 +252,8 @@ class InstaAPI:
         """ Post a photo to your feed
 
         Args:
-            photo_path: Path to photo
-            caption: The caption for the photo to be posted
+            photo_path (str): Path to photo
+            caption (str): The caption for the photo to be posted
 
         Examples:
             in this case 'beach.jpg' is a file located in the current working directory::
@@ -282,7 +302,11 @@ class InstaAPI:
 
     @login_required
     def delete_post(self, inpt):
-        """ Delete a single post. media_id or shortcode. """
+        """  Delete a post.
+
+        Args:
+            inpt (str, int): inpt can take media_id or shortcode of post
+        """
 
         media_id = inpt
         if isinstance(inpt, str) and not inpt.isdigit():
@@ -294,9 +318,9 @@ class InstaAPI:
         self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
 
     def logout(self):
-        """ Logout current user. All other API calls will not work after this method is called => response"""
+        """ Logout current user. All other API calls will not work after this method is called"""
 
-        resp = self._make_request(logout_endpoint, None, None, 'Logged out successfully')
+        self._make_request(logout_endpoint, None, None, 'Logged out successfully')
 
 
 if __name__ == '__main__':
