@@ -3,18 +3,19 @@ import requests
 from requests import RequestException
 from requests_toolbelt import MultipartEncoder
 from json import JSONDecodeError
+from requests.models import Response
 
 if __name__ == '__main__':
     from endpoints import *
     from config import log
     from utils import login_required, code_to_media_id, generate_boundary
-    from exceptions import LoginAuthentiationError
+    from exceptions import LoginAuthentiationError, InvalidHashtag
 
 else:
     from .endpoints import *
     from .config import log
     from .utils import login_required, code_to_media_id, generate_boundary
-    from .exceptions import LoginAuthentiationError
+    from .exceptions import LoginAuthentiationError, InvalidHashtag
 
 
 class InstaAPI:
@@ -40,6 +41,20 @@ class InstaAPI:
         self.msg = None
 
     def _make_request(self, endpoint, data=None, params=None, msg='', post=False):
+        """ Shorthand way to make a request.
+
+        Args:
+            endpoint (str): API endpoint
+            data (dict, None): Data if using POST request
+            params (dict, None): Params, if needed
+            msg (str): Message to log when response is successful
+            post (bool): True if this is a POST request, FALSE otherwise
+
+        Returns:
+            Response: Requests response object
+
+
+        """
         resp = None
         try:
             if not data and not post:
@@ -152,8 +167,16 @@ class InstaAPI:
 
     @login_required
     def get_hash_feed(self, hashtag, pages=4):
-        """ returns dictionary from channel containing newest posts"""
+        """ Get hashtag feed
 
+        Args:
+            hashtag (str): The hashtag to be used. Ex. #love, #fashion, #beautiful, etc
+            pages (int): The number of pages to crawl. Recommended to not go above four
+
+        Returns:
+            dict: Hashtag dictionary containing information about a specific hash
+
+        """
         params = {
             'query_hash': get_hashinfo_query,
             'variables': '{"tag_name": "%s", "first": %d}' % (hashtag, pages)
@@ -170,7 +193,7 @@ class InstaAPI:
             pass
         else:
             if not data['data']['hashtag']:
-                raise ValueError("Received no data for hashstag. Most likely an invalid hashtag")
+                raise InvalidHashtag("Received no data for hashstag. Please make sure it was entered properly")
 
             return data['data']['hashtag']['edge_hashtag_to_media']['edges']
 
@@ -212,10 +235,10 @@ class InstaAPI:
             photo_path: Path to photo
             caption: The caption for the photo to be posted
 
-        Returns: None
         Examples:
+            in this case 'beach.jpg' is a file located in the current working directory::
 
-            >> insta.post_photo('beach.jpg', caption="Swimming in the beach")
+                insta.post_photo('beach.jpg', caption="Swimming in the beach")
 
         """
 
