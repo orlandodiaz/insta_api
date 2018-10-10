@@ -4,19 +4,18 @@ from requests import RequestException
 from requests_toolbelt import MultipartEncoder
 from json import JSONDecodeError
 from requests.models import Response
-
+from log3 import log
 if __name__ == '__main__':
     from endpoints import *
-    from config import log
+    # from config import log
     from utils import login_required, code_to_media_id, generate_boundary
     from exceptions import LoginAuthentiationError, InvalidHashtag
 
 else:
     from .endpoints import *
-    from .config import log
+    # from .config import log
     from .utils import login_required, code_to_media_id, generate_boundary
     from .exceptions import LoginAuthentiationError, InvalidHashtag
-
 
 class InstaAPI:
 
@@ -97,7 +96,7 @@ class InstaAPI:
         log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
 
     def login(self, username, password):
-        """
+        """Login to instagram.
 
         Args:
             username (str): Your instagram username
@@ -111,7 +110,7 @@ class InstaAPI:
 
         login_data = {'username': username, 'password': password}
 
-        login_resp = self._make_request(login_endpoint,data=login_data, msg="Login request sent")
+        login_resp = self._make_request(login_endpoint, data=login_data, msg="Login request sent")
         log.debug('Login response: {}'.format(login_resp.text))
 
         if login_resp.json()['authenticated']:
@@ -121,12 +120,11 @@ class InstaAPI:
         else:
             raise LoginAuthentiationError
 
-
     @login_required
     def like(self, inpt):
-        """ Like a single post. media_id or shortcode => status code"""
+        """ Like a single post. media_id or shortcodee"""
 
-        media_id=inpt
+        media_id = inpt
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
 
@@ -136,7 +134,7 @@ class InstaAPI:
     def unlike(self, inpt):
         """ Like a single post. media_id or shortcode"""
 
-        media_id=inpt
+        media_id = inpt
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
 
@@ -153,7 +151,6 @@ class InstaAPI:
         """ Follow an user by their unique username"""
 
         self.follow_by_id(self.get_user_info(username)['id'])
-
 
     @login_required
     def follow_by_name(self, username):
@@ -192,7 +189,7 @@ class InstaAPI:
         resp = self._make_request(graphql_endpoint, params=params, msg='Hash feed was received')
 
         try:
-            data = resp.json() #=> Possible JSONDecoderror
+            data = resp.json()  # => Possible JSONDecoderror
         except JSONDecodeError:
             # Server might return incomplete JSON response or requests might be truncating them.
             # The content-length does not match in some instances
@@ -214,7 +211,7 @@ class InstaAPI:
             dict: JSON decoded response
         """
 
-        resp = self._make_request(user_info_endpoint.format(username=username), msg='User info data received' )
+        resp = self._make_request(user_info_endpoint.format(username=username), msg='User info data received')
         return resp.json()['graphql']['user']
 
     @login_required
@@ -231,21 +228,16 @@ class InstaAPI:
         params = {
             'query_hash': get_userinfo_query,
             'variables': '{"user_id": "%s", "include_chaining": true, "include_reel": true,'
-            ' "include_suggested_users": false, "include_logged_out_extras": false,'
-            ' "include_highlight_reels": false}' % user_id
+                         ' "include_suggested_users": false, "include_logged_out_extras": false,'
+                         ' "include_highlight_reels": false}' % user_id
         }
 
-        resp = self._make_request(graphql_endpoint, None, params=params, msg='User info data received')
+        resp = self._make_request(graphql_endpoint, params=params, msg='User info data received')
 
         self.user_data = resp.json()['data']['user']['reel']['owner']
 
-        # return self.user_data
         return resp.json()
-        # post_ids = [str(item['node']['id']) for item in data]
-        # owner_ids = [str(item['node']['owner']['id']) for item in data]
-        #
-        # print post_ids[:5]
-        # print owner_ids[:5]
+
 
     @login_required
     def post_photo(self, photo_path, caption="No caption"):
@@ -285,13 +277,13 @@ class InstaAPI:
                 }
             )
 
-            resp = self._make_request(post_photo_endpoint1, m.to_string(), None, 'Uploaded photo successfully')
+            resp = self._make_request(post_photo_endpoint1, m.to_string(), 'Uploaded photo successfully')
             upload_id = resp.json()['upload_id']
 
             self.ses.headers.update({
-                    'content-type': 'application/x-www-form-urlencoded',
-                    'referer': 'https://www.instagram.com/create/details/',
-                })
+                'content-type': 'application/x-www-form-urlencoded',
+                'referer': 'https://www.instagram.com/create/details/',
+            })
 
             data = [
                 ('upload_id', str(upload_id)),
@@ -311,22 +303,17 @@ class InstaAPI:
         media_id = inpt
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
-            # assert 'x-csrftoken' in self.ses.headers
-            # resp = self._make_request(like_endpoint.format(media_id=media_id), '', None, 'Liked %s' % media_id)
 
-        assert 'x-csrftoken' in self.ses.headers
-        self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
+            self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
+        else:
+            self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
 
     def logout(self):
         """ Logout current user. All other API calls will not work after this method is called"""
 
-        self._make_request(logout_endpoint, None, None, 'Logged out successfully')
+        self._make_request(logout_endpoint, 'Logged out successfully')
 
 
 if __name__ == '__main__':
     # Play with the API here
     insta = InstaAPI()
-
-
-
-
