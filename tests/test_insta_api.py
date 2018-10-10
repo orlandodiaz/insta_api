@@ -53,7 +53,9 @@ class TestInstaAPI:
         assert insta.last_resp.ok
 
     def test_delete_post(self, insta):
-        insta.delete_post(1876730039681510757)
+        insta.post_photo('../resources/travel.jpeg', 'Delete me')
+        media_id = insta.last_resp.json()['media']['pk']
+        insta.delete_post(media_id)
 
         assert insta.last_resp.ok
 
