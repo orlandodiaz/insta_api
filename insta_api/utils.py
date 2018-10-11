@@ -9,6 +9,15 @@ def login_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
+def media_id_to_code(media_id):
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+    short_code = ''
+    while media_id > 0:
+        remainder = media_id % 64
+        media_id = (media_id-remainder)//64
+        short_code = alphabet[remainder] + short_code
+    return short_code
+
 def code_to_media_id(shortcode):
     """ Converts shortcode to media_id"""
 
