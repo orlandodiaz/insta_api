@@ -18,6 +18,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires = ['requests==2.19.1', 'requests-toolbelt==0.8.0', 'log3']
+    install_requires = ['requests==2.19.1', 'requests-toolbelt==0.8.0', 'log3==0.1.0']
 
 )
