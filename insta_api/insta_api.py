@@ -5,17 +5,21 @@ from requests_toolbelt import MultipartEncoder
 from json import JSONDecodeError
 from requests.models import Response
 from log3 import log
+import pickle
+import os
+log.logger.setLevel('DEBUG')
+
 if __name__ == '__main__':
     from endpoints import *
     # from config import log
     from utils import login_required, code_to_media_id, generate_boundary
-    from exceptions import LoginAuthentiationError, InvalidHashtag
+    from exceptions import LoginAuthenticationError, InvalidHashtag, CheckpointRequired
 
 else:
     from .endpoints import *
     # from .config import log
     from .utils import login_required, code_to_media_id, generate_boundary
-    from .exceptions import LoginAuthentiationError, InvalidHashtag
+    from .exceptions import LoginAuthenticationError, InvalidHashtag, CheckpointRequired
 
 class InstaAPI:
 
@@ -74,8 +78,6 @@ class InstaAPI:
             self.status = resp.status_code
             self.msg = resp.content
             log.info(msg)
-            # log.info(resp.text)
-            # log.debug("test")
             return resp
 
     @property
@@ -104,21 +106,73 @@ class InstaAPI:
 
         Raises:
             LoginAuthenticationError: Raised when authentication has failed
+            CheckpointRequired: Raised when instagram has detected an unusual login attempt. This usually happens
+            when your IP is different or your mid (MACHINE_ID) cookie has changed
         """
+
+        # Load cookies
+        if os.path.isfile('cookies'):
+            log.debug('Loading cookies')
+            with open('cookies', 'rb+') as file:
+                cookies = pickle.load(file)
+                log.debug('STORED COOKIE: {}'.format(cookies.get_dict()))
+                self.ses.cookies = cookies
 
         self._get_init_csrftoken()
 
         login_data = {'username': username, 'password': password}
 
-        login_resp = self._make_request(login_endpoint, data=login_data, msg="Login request sent")
-        log.debug('Login response: {}'.format(login_resp.text))
+        try:
+            self._make_request(login_endpoint, data=login_data, msg="Login request sent")
+        except requests.exceptions.HTTPError:
 
-        if login_resp.json()['authenticated']:
-            log.info('Logged in successfully')
-            self.ses.headers.update({'x-csrftoken': login_resp.cookies['csrftoken']})
-            assert 'sessionid' in self.ses.cookies.get_dict()
+            resp_data = self.last_resp.json()
+            if resp_data['message'] == 'checkpoint_required':
+
+                # Store cookies
+                with open('cookies', 'wb+') as file:
+                    log.debug('Saving cookies {}'.format(self.ses.cookies.get_dict()))
+                    pickle.dump(self.ses.cookies, file)
+
+                log.info("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
+
+
+                checkpoint_url = resp_data['checkpoint_url']
+                checkpoint_id = checkpoint_url.split("/")[2]
+                checkpoint_code = checkpoint_url.split("/")[3]
+
+                self._make_request(checkpoint_url)
+
+                log.debug(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code))
+                self._make_request(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code),
+                                                             data={'choice':'1'})
+
+                msg = """
+                Instagram has flagged this login as suspicious. You are either signing in from an unknown IP
+                or your machine id (mid) has changed.
+                Please enter the six-digit code that was sent to your instagram registered email to proceed.
+                """
+                log.error(msg)
+
+                verification_code = input("Enter the six-digit verification code : ")
+
+                self._make_request(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code), data={'security_code': verification_code})
+
+                # self.login(username, password)
+
+
+                # raise CheckpointRequired(msg.format(base_endpoint, resp_data['checkpoint_url']))
+
+
         else:
-            raise LoginAuthentiationError
+            resp_data = self.last_resp.json()
+
+            if resp_data['authenticated']:
+                log.info('Logged in successfully')
+                self.ses.headers.update({'x-csrftoken': self.last_resp.cookies['csrftoken']})
+                assert 'sessionid' in self.ses.cookies.get_dict()
+            else:
+                raise LoginAuthenticationError
 
     @login_required
     def like(self, inpt):

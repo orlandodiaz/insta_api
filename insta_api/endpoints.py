@@ -19,3 +19,6 @@ post_info_endpoint = '/{post_id}/?__a=1'
 graphql_endpoint = '/graphql/query/'
 get_userinfo_query = '9ca88e465c3f866a76f7adee3871bdd8'
 get_hashinfo_query = 'ded47faa9a1aaded10161a2ff32abb6b'
+
+challenge_endpoint = '/challenge/{id}/{code}/'
+
