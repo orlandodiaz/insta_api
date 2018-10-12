@@ -22,3 +22,4 @@ get_hashinfo_query = 'ded47faa9a1aaded10161a2ff32abb6b'
 
 challenge_endpoint = '/challenge/{id}/{code}/'
 
+challenge_replay = '/challenge/replay/{id}/{code}/'
