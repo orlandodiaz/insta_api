@@ -7,23 +7,25 @@ from requests.models import Response
 from log3 import log
 import pickle
 import os
+
 log.logger.setLevel('DEBUG')
 
 if __name__ == '__main__':
     from endpoints import *
     # from config import log
-    from utils import login_required, code_to_media_id, generate_boundary
+    from utils import login_required, logout_required, code_to_media_id, generate_boundary
     from exceptions import LoginAuthenticationError, InvalidHashtag, CheckpointRequired
 
 else:
     from .endpoints import *
     # from .config import log
-    from .utils import login_required, code_to_media_id, generate_boundary
+    from .utils import login_required,logout_required, code_to_media_id, generate_boundary
     from .exceptions import LoginAuthenticationError, InvalidHashtag, CheckpointRequired
 
 class InstaAPI:
 
-    def __init__(self):
+    def __init__(self, use_cookies=True):
+        """ Initialization loads cookies by default so no login will be required unless needed"""
 
         self.ses = requests.Session()
 
@@ -87,6 +89,7 @@ class InstaAPI:
             Response: Requests response object
 
         """
+
         resp = None
         try:
             if not data and not post:
@@ -110,23 +113,22 @@ class InstaAPI:
             log.info(msg)
             return resp
 
-    @property
-    def is_loggedin(self):
-        return 'sessionid' in self.ses.cookies.get_dict()
+    def _close_session(self):
+        """ Closes the request session"""
 
-    def close_session(self):
         self.ses.close()
 
     def _get_init_csrftoken(self):
         """ Get initial csrftoken from the main website. Used to login """
 
-        visit_resp = self._make_request('', None, None, 'Visit was successful.')
+        visit_resp = self._make_request('', msg='Visit was successful.')
         assert 'csrftoken' in visit_resp.cookies.get_dict()
         self.ses.headers.update({'x-csrftoken': visit_resp.cookies['csrftoken']})
 
         log.debug("Session headers: {}".format(self.ses.headers))
         log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
 
+    @logout_required
     def login(self, username, password):
         """Login to instagram.
 
@@ -140,14 +142,6 @@ class InstaAPI:
             when your IP is different or your mid (MACHINE_ID) cookie has changed
         """
 
-        # Load cookies
-        if os.path.isfile('cookies'):
-            log.debug('Loading cookies')
-            with open('cookies', 'rb+') as file:
-                cookies = pickle.load(file)
-                log.debug('STORED COOKIE: {}'.format(cookies.get_dict()))
-                self.ses.cookies = cookies
-
         self._get_init_csrftoken()
 
         login_data = {'username': username, 'password': password}
@@ -159,13 +153,7 @@ class InstaAPI:
             resp_data = self.last_resp.json()
             if resp_data['message'] == 'checkpoint_required':
 
-                # Store cookies
-                with open('cookies', 'wb+') as file:
-                    log.debug('Saving cookies {}'.format(self.ses.cookies.get_dict()))
-                    pickle.dump(self.ses.cookies, file)
-
-                log.info("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
-
+                self._save_cookies()
 
                 checkpoint_url = resp_data['checkpoint_url']
                 checkpoint_id = checkpoint_url.split("/")[2]
@@ -184,16 +172,24 @@ class InstaAPI:
                 """
                 log.error(msg)
 
-                verification_code = input("Enter the six-digit verification code : ")
+                while True:
+                    verification_code = input("Enter the six-digit verification code. Type REPLAY to request another one: ")
 
-                self._make_request(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code), data={'security_code': verification_code})
+                    if verification_code == 'REPLAY':
+                        self._make_request(challenge_replay.format(id=checkpoint_id, code=checkpoint_code), post=True)
+                    else:
+                        self._make_request(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code), data={'security_code': verification_code})
+                        break
 
-                # self.login(username, password)
+                if self.is_loggedin:
+                    log.info('Logged in successfully')
 
-
-                # raise CheckpointRequired(msg.format(base_endpoint, resp_data['checkpoint_url']))
-
-
+                    # Store cookies
+                    with open('cookies', 'wb+') as file:
+                        log.debug('Saving cookies {}'.format(self.ses.cookies.get_dict()))
+                        pickle.dump(self.ses.cookies, file)
+                else:
+                    raise LoginAuthenticationError
         else:
             resp_data = self.last_resp.json()
 
@@ -201,6 +197,8 @@ class InstaAPI:
                 log.info('Logged in successfully')
                 self.ses.headers.update({'x-csrftoken': self.last_resp.cookies['csrftoken']})
                 assert 'sessionid' in self.ses.cookies.get_dict()
+                self._save_cookies()
+
             else:
                 raise LoginAuthenticationError
 
@@ -227,6 +225,7 @@ class InstaAPI:
     @login_required
     def follow_by_id(self, user_id):
         """ Follow an user by their unique id, not their username!"""
+
         print(self.ses.cookies.get_dict())
         self._make_request(follow_endpoint.format(user_id=user_id), post=True, msg='Followed %s' % user_id)
 
@@ -245,6 +244,7 @@ class InstaAPI:
     @login_required
     def unfollow_by_id(self, user_id):
         """ Unfollow an user by their unique id, not their username!"""
+
         print(self.ses.cookies.get_dict())
         self._make_request(unfollow_endpoint.format(user_id=user_id), post=True, msg='Unfollowed %s' % user_id)
 
@@ -265,6 +265,7 @@ class InstaAPI:
             dict: Hashtag dictionary containing information about a specific hash
 
         """
+
         params = {
             'query_hash': get_hashinfo_query,
             'variables': '{"tag_name": "%s", "first": %d}' % (hashtag, pages)
@@ -321,7 +322,6 @@ class InstaAPI:
         self.user_data = resp.json()['data']['user']['reel']['owner']
 
         return resp.json()
-
 
     @login_required
     def post_photo(self, photo_path, caption="No caption"):
@@ -395,9 +395,13 @@ class InstaAPI:
     def logout(self):
         """ Logout current user. All other API calls will not work after this method is called"""
 
-        self._make_request(logout_endpoint, 'Logged out successfully')
+        try:
+            self._make_request(logout_endpoint, 'Logged out successfully')
+        except requests.exceptions.HTTPError:
+            self.ses.cookies.update({'sessionid': None})
+            # os.remove('cookies')
 
 
 if __name__ == '__main__':
     # Play with the API here
-    insta = InstaAPI()
+    pass
