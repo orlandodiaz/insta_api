@@ -9,6 +9,15 @@ def login_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
+
+def logout_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if args[0].is_loggedin:
+            raise ValueError('Logout required before logging in')
+        return fn(*args, **kwargs)
+    return wrapper
+
 def media_id_to_code(media_id):
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
     short_code = ''
