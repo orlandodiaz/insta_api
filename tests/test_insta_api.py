@@ -9,7 +9,7 @@ def insta():
     insta = InstaAPI()
     insta.login(username, password)
     yield insta
-    insta.close_session()
+    insta._close_session()
 
 
 class TestInstaAPI:

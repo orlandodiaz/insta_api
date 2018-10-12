@@ -7,7 +7,7 @@ from insta_api.endpoints import *
 def insta():
     insta = InstaAPI()
     yield insta
-    insta.close_session()
+    insta._close_session()
 
 
 class TestEndpoints:
