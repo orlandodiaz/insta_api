@@ -4,9 +4,10 @@ from tests.testing_config import username, password
 from insta_api.utils import media_id_to_code
 import time
 
+
 @pytest.fixture(scope="class")
 def insta():
-    insta = InstaAPI()
+    insta = InstaAPI(use_cookies=False)
     insta.login(username, password)
     yield insta
     insta._close_session()

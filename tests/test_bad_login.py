@@ -5,7 +5,7 @@ import pytest
 from insta_api.exceptions import LoginAuthenticationError
 
 def test_bad_login():
-    insta = InstaAPI()
+    insta = InstaAPI(use_cookies=False)
 
     with pytest.raises(LoginAuthenticationError):
         insta.login('INVALID_USERNAME', 'INVALID_PASSWORD')

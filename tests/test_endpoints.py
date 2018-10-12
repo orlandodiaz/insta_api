@@ -5,7 +5,7 @@ from insta_api.endpoints import *
 
 @pytest.fixture(scope="module")
 def insta():
-    insta = InstaAPI()
+    insta = InstaAPI(use_cookies=False)
     yield insta
     insta._close_session()
 
