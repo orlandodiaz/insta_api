@@ -43,6 +43,36 @@ class InstaAPI:
         self.status = None
         self.msg = None
 
+        if use_cookies:
+            self._load_cookies()
+
+    @property
+    def is_loggedin(self):
+        """ Check if user is logged in
+
+        Returns: bool: True if logged in, False otherwise.
+        """
+        return 'sessionid' in self.ses.cookies.get_dict()
+
+    def _load_cookies(self):
+        """ Check if there are cookies saved to save on login API calls"""
+
+        if os.path.isfile('cookies'):
+            log.debug('Loading cookies')
+            with open('cookies', 'rb+') as file:
+                cookies = pickle.load(file)
+                log.debug('STORED COOKIE: {}'.format(cookies.get_dict()))
+                self.ses.cookies = cookies
+
+    def _save_cookies(self):
+        """ Save cookies locally """
+
+        with open('cookies', 'wb+') as file:
+            log.debug('Saving cookies {}'.format(self.ses.cookies.get_dict()))
+            pickle.dump(self.ses.cookies, file)
+
+        log.info("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
+
     def _make_request(self, endpoint, data=None, params=None, msg='', post=False):
         """ Shorthand way to make a request.
 
