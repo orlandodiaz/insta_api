@@ -7,6 +7,8 @@ from requests.models import Response
 from log3 import log
 import pickle
 import os
+import insta_api.server_errors
+from insta_api.server_errors import *
 
 log.logger.setLevel('DEBUG')
 log.COLWIDTH = 18
@@ -15,13 +17,13 @@ if __name__ == '__main__':
     from endpoints import *
     # from config import log
     from utils import login_required, logout_required, code_to_media_id, generate_boundary
-    from exceptions import LoginAuthenticationError, InvalidHashtag, CheckpointRequired
+    from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked)
 
 else:
     from .endpoints import *
     # from .config import log
     from .utils import login_required,logout_required, code_to_media_id, generate_boundary
-    from .exceptions import LoginAuthenticationError, InvalidHashtag, CheckpointRequired
+    from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked)
 
 class InstaAPI:
 
@@ -116,14 +118,14 @@ class InstaAPI:
                 resp.raise_for_status()
 
         except RequestException as ex:
-            log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.content))
+            log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
 
             self.last_resp = resp
             self.status = resp.status_code
             self.msg = resp.content
             raise
         else:
-            log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.content))
+            log.success('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.content))
             # log.info(msg)
             self.last_resp = resp
             self.status = resp.status_code
@@ -234,14 +236,23 @@ class InstaAPI:
 
         media_id = inpt
 
-
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
             log.debug(media_id)
 
+        try:
             self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
-        else:
-            self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
+        except requests.HTTPError as e:
+            log.warning("WE GOT AN HTTP ERROR")
+            if e.response.text == 'missing media':
+                raise MissingMedia("The post you are trying to like has most likely been removed")
+
+            if e.response.status_code == 400 and e.response.text == action_blocked['text']:
+                raise ActionBlocked(" This action was blocked")
+            else:
+                raise
+        except requests.RequestException:
+            raise
 
     @login_required
     def unlike(self, inpt):
