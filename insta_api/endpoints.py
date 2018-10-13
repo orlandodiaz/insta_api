@@ -15,6 +15,8 @@ post_photo_endpoint2 = '/create/configure/'
 
 user_info_endpoint = '/{username}/?__a=1'
 post_info_endpoint = '/{post_id}/?__a=1'
+current_user_endpoint = '/accounts/edit/?__a=1'
+
 
 graphql_endpoint = '/graphql/query/'
 get_userinfo_query = '9ca88e465c3f866a76f7adee3871bdd8'
