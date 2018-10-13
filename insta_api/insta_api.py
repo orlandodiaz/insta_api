@@ -9,6 +9,7 @@ import pickle
 import os
 
 log.logger.setLevel('DEBUG')
+log.COLWIDTH = 18
 
 if __name__ == '__main__':
     from endpoints import *
@@ -44,9 +45,23 @@ class InstaAPI:
         self.last_resp = None
         self.status = None
         self.msg = None
+        self.username = None
 
         if use_cookies:
             self._load_cookies()
+            self.get_username()
+            self._get_init_csrftoken()
+            log.info('Logged in as {}'.format(self.username))
+
+    @login_required
+    def get_username(self):
+        """ Get the current username"""
+
+        if not self.username:
+            resp = self._make_request(current_user_endpoint, params={'__a': '1'})
+            user_info = resp.json()['form_data']
+            username = user_info['username']
+            self.username = username
 
     @property
     def is_loggedin(self):
@@ -101,16 +116,19 @@ class InstaAPI:
                 resp.raise_for_status()
 
         except RequestException as ex:
-            log.error('{} - {}'.format(resp.status_code, resp.content))
+            log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.content))
+
             self.last_resp = resp
             self.status = resp.status_code
             self.msg = resp.content
             raise
         else:
+            log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.content))
+            # log.info(msg)
             self.last_resp = resp
             self.status = resp.status_code
             self.msg = resp.content
-            log.info(msg)
+
             return resp
 
     def _close_session(self):
@@ -119,14 +137,22 @@ class InstaAPI:
         self.ses.close()
 
     def _get_init_csrftoken(self):
-        """ Get initial csrftoken from the main website. Used to login """
+        """ Get initial csrftoken from the main website.
 
-        visit_resp = self._make_request('', msg='Visit was successful.')
-        assert 'csrftoken' in visit_resp.cookies.get_dict()
-        self.ses.headers.update({'x-csrftoken': visit_resp.cookies['csrftoken']})
+        If already logged in, maybe because of a cookie, copy that cookie to the headers
+        The csrf token is needed to be in the headers for most API calls"""
 
-        log.debug("Session headers: {}".format(self.ses.headers))
-        log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
+        if not self.is_loggedin:
+            visit_resp = self._make_request('', msg='Visit was successful.')
+            assert 'csrftoken' in visit_resp.cookies.get_dict()
+            self.ses.headers.update({'x-csrftoken': visit_resp.cookies['csrftoken']})
+
+        else:
+            self.ses.headers.update({'x-csrftoken': self.ses.cookies.get_dict()['csrftoken']})
+
+
+        # log.debug("Session headers: {}".format(self.ses.headers))
+        # log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
 
     @logout_required
     def login(self, username, password):
@@ -142,11 +168,10 @@ class InstaAPI:
             when your IP is different or your mid (MACHINE_ID) cookie has changed
         """
 
-        self._get_init_csrftoken()
-
         login_data = {'username': username, 'password': password}
 
         try:
+            log.info("Logging in as {}".format(username))
             self._make_request(login_endpoint, data=login_data, msg="Login request sent")
         except requests.exceptions.HTTPError:
 
@@ -198,6 +223,7 @@ class InstaAPI:
                 self.ses.headers.update({'x-csrftoken': self.last_resp.cookies['csrftoken']})
                 assert 'sessionid' in self.ses.cookies.get_dict()
                 self._save_cookies()
+                self.username = username
 
             else:
                 raise LoginAuthenticationError
@@ -207,10 +233,15 @@ class InstaAPI:
         """ Like a single post. media_id or shortcodee"""
 
         media_id = inpt
+
+
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
+            log.debug(media_id)
 
-        self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
+            self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
+        else:
+            self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
 
     @login_required
     def unlike(self, inpt):
