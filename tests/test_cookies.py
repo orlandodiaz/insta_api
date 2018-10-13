@@ -8,7 +8,7 @@ import os
 def insta():
     if os.path.isfile('cookies'):
         os.remove('cookies')
-    insta = InstaAPI(use_cookies=True)
+    insta = InstaAPI(use_cookies=False)
     yield insta
     insta.logout()
 

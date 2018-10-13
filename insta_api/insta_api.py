@@ -170,6 +170,8 @@ class InstaAPI:
             when your IP is different or your mid (MACHINE_ID) cookie has changed
         """
 
+        self._get_init_csrftoken()
+
         login_data = {'username': username, 'password': password}
 
         try:
