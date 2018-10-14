@@ -21,15 +21,15 @@ The first thing you should do is import the `insta_api` module
 
     from insta_api import insta_api
 
-Before moving on to the most interesting stuff you need to login:
+Login to your instagram account
 
-    insta = InstaAPI(USERNAME, PASSWORD)
-    insta.login()
+    insta = InstaAPI()
+    insta.login(USERNAME, PASSWORD)
 
 ### Usage ###
 
 ### Liking posts
-You can like any posts by either the shortcode. The shortcode can be obtained by
+You can like posts by either using shortcode or media_id. The shortcode can be obtained by
 looking at the URL of a post in the addressbar.
 
 It looks something like this `Bov3uZUFJRh`
@@ -41,7 +41,7 @@ will also work.
 
 ### Following users
 
-To follow an user you need 1 of two things: either their username or their unique user id
+To follow an user you need one of two things: either their username or their unique user id
 
 For example, to like by username:
 
