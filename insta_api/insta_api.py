@@ -115,15 +115,21 @@ class InstaAPI:
                 resp.raise_for_status()
 
         except RequestException as ex:
-            log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
+            if len(resp.text) > 300:
+                log.error('STATUS: {} - CONTENT (truncated): {}'.format(resp.status_code, resp.text[:300]+"..."))
+            else:
+                log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
 
             self.last_resp = resp
             self.status = resp.status_code
             self.msg = resp.content
             raise
         else:
-            log.success('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.content))
-            # log.info(msg)
+            if len(resp.text) > 300:
+                log.success('STATUS: {} - CONTENT (truncated): {}'.format(resp.status_code, resp.text[:300]+"..."))
+            else:
+                log.success('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))            # log.info(msg)
+
             self.last_resp = resp
             self.status = resp.status_code
             self.msg = resp.content
