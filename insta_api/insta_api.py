@@ -90,7 +90,7 @@ class InstaAPI:
             log.debug('Saving cookies {}'.format(self.ses.cookies.get_dict()))
             pickle.dump(self.ses.cookies, file)
 
-        log.info("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
+        log.debug("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
 
     def _make_request(self, endpoint, data=None, params=None, msg='', post=False):
         """ Shorthand way to make a request.
