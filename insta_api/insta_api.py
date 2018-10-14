@@ -14,13 +14,15 @@ if __name__ == '__main__':
     from endpoints import *
     # from config import log
     from utils import login_required, logout_required, code_to_media_id, generate_boundary
-    from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked)
+    from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
+                            IncompleteJSON)
 
 else:
     from .endpoints import *
     # from .config import log
     from .utils import login_required,logout_required, code_to_media_id, generate_boundary
-    from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked)
+    from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
+                             IncompleteJSON)
 
 class InstaAPI:
 
@@ -325,8 +327,8 @@ class InstaAPI:
         except JSONDecodeError:
             # Server might return incomplete JSON response or requests might be truncating them.
             # The content-length does not match in some instances
-            log.debug('Received an incomplete JSON response')
-            pass
+            log.warning('Received an incomplete JSON response')
+            raise IncompleteJSON
         else:
             if not data['data']['hashtag']:
                 raise InvalidHashtag("Received no data for hashstag. Please make sure it was entered properly")
