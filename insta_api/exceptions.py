@@ -16,3 +16,7 @@ class MissingMedia(Exception):
 
 class ActionBlocked(Exception):
     """ Raised when a request was blocked by instagram"""
+
+
+class IncompleteJSON(Exception):
+    """ Raised when instagram returns an incomplete JSON, for whatever reason"""
