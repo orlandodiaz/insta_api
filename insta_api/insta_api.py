@@ -10,9 +10,6 @@ import os
 import insta_api.server_errors
 from insta_api.server_errors import *
 
-# log.logger.setLevel('DEBUG')
-# log.COLWIDTH = 18
-
 if __name__ == '__main__':
     from endpoints import *
     # from config import log
