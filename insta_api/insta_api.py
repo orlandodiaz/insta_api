@@ -10,8 +10,8 @@ import os
 import insta_api.server_errors
 from insta_api.server_errors import *
 
-log.logger.setLevel('DEBUG')
-log.COLWIDTH = 18
+# log.logger.setLevel('DEBUG')
+# log.COLWIDTH = 18
 
 if __name__ == '__main__':
     from endpoints import *
@@ -27,7 +27,7 @@ else:
 
 class InstaAPI:
 
-    def __init__(self, use_cookies=True):
+    def __init__(self, use_cookies=False):
         """ Initialization loads cookies by default so no login will be required unless needed"""
 
         self.ses = requests.Session()
@@ -179,6 +179,7 @@ class InstaAPI:
             self._make_request(login_endpoint, data=login_data, msg="Login request sent")
         except requests.exceptions.HTTPError:
 
+
             resp_data = self.last_resp.json()
             if resp_data['message'] == 'checkpoint_required':
 
@@ -245,7 +246,6 @@ class InstaAPI:
         try:
             self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
         except requests.HTTPError as e:
-            log.warning("WE GOT AN HTTP ERROR")
             if e.response.text == 'missing media':
                 raise MissingMedia("The post you are trying to like has most likely been removed")
 
