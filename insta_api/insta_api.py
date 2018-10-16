@@ -118,7 +118,7 @@ class InstaAPI:
 
         except RequestException as ex:
             if len(resp.text) > 300:
-                log.error('STATUS: {} - CONTENT (truncated): {}'.format(resp.status_code, resp.text[:300]+"..."))
+                log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
             else:
                 log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
 
