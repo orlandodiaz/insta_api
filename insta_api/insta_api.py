@@ -26,7 +26,7 @@ else:
 
 class InstaAPI:
 
-    def __init__(self, use_cookies=False):
+    def __init__(self, use_cookies=True):
         """ Initialization loads cookies by default so no login will be required unless needed"""
 
         self.ses = requests.Session()
@@ -47,6 +47,7 @@ class InstaAPI:
         self.status = None
         self.msg = None
         self.username = None
+        self.use_cookies=use_cookies
 
         if use_cookies:
             self._load_cookies()
