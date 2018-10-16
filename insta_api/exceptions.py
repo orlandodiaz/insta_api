@@ -20,3 +20,7 @@ class ActionBlocked(Exception):
 
 class IncompleteJSON(Exception):
     """ Raised when instagram returns an incomplete JSON, for whatever reason"""
+
+class NoCookiesFound(Exception):
+    """ Raised when no cookies are found in the system"""
+

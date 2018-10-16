@@ -15,14 +15,14 @@ if __name__ == '__main__':
     # from config import log
     from utils import login_required, logout_required, code_to_media_id, generate_boundary
     from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
-                            IncompleteJSON)
+                            IncompleteJSON, NoCookiesFound)
 
 else:
     from .endpoints import *
     # from .config import log
     from .utils import login_required,logout_required, code_to_media_id, generate_boundary
     from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
-                             IncompleteJSON)
+                             IncompleteJSON, NoCookiesFound)
 
 class InstaAPI:
 
@@ -49,7 +49,7 @@ class InstaAPI:
         self.username = None
         self.use_cookies=use_cookies
 
-        if use_cookies:
+        if os.path.isfile('cookies') and use_cookies:
             self._load_cookies()
             self.get_username()
             self._get_init_csrftoken()
@@ -82,6 +82,8 @@ class InstaAPI:
                 cookies = pickle.load(file)
                 log.debug('STORED COOKIE: {}'.format(cookies.get_dict()))
                 self.ses.cookies = cookies
+        else:
+            raise NoCookiesFound("No cookies found in the current directory")
 
     def _save_cookies(self):
         """ Save cookies locally """
