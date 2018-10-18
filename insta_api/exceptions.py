@@ -11,16 +11,29 @@ class CheckpointRequired(Exception):
 
 
 class MissingMedia(Exception):
-    """ Raised when the post one is trying to like or follow does not exist (maybe deleted) """
+    """ Raised when the post one is trying to like or follow does not exist (maybe deleted)
+
+    Text:
+        missing media
+
+    """
 
 
 class ActionBlocked(Exception):
-    """ Raised when a request was blocked by instagram"""
+    """ Raised when a request was blocked by instagram
+    Status code and message:
+        400: It looks like you were misusing this feature by going too fast. You’ve been temporarily blocked from using it.
+    """
 
 
 class IncompleteJSON(Exception):
     """ Raised when instagram returns an incomplete JSON, for whatever reason"""
 
+
 class NoCookiesFound(Exception):
     """ Raised when no cookies are found in the system"""
+
+
+class ServerError(Exception):
+    """ Raised when other server errors occur """
 
