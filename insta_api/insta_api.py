@@ -15,14 +15,14 @@ if __name__ == '__main__':
     # from config import log
     from utils import login_required, logout_required, code_to_media_id, generate_boundary
     from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
-                            IncompleteJSON, NoCookiesFound)
+                            IncompleteJSON, NoCookiesFound, ServerError)
 
 else:
     from .endpoints import *
     # from .config import log
     from .utils import login_required,logout_required, code_to_media_id, generate_boundary
     from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
-                             IncompleteJSON, NoCookiesFound)
+                             IncompleteJSON, NoCookiesFound, ServerError)
 
 class InstaAPI:
 
@@ -260,7 +260,7 @@ class InstaAPI:
             if e.response.status_code == 400 and e.response.text == action_blocked['text']:
                 raise ActionBlocked(" This action was blocked")
             else:
-                raise
+                raise ServerError("An uknown server error ocurred")
         except requests.RequestException:
             raise
 
