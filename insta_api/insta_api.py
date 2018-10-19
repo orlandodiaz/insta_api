@@ -260,7 +260,7 @@ class InstaAPI:
             if e.response.status_code == 400 and e.response.text == action_blocked['text']:
                 raise ActionBlocked(" This action was blocked")
 
-            elif e.response.status_code.startswith(500):
+            elif e.response.status_code in range(500, 600):
                 raise ServerError("An uknown server error ocurred")
 
         except requests.RequestException:
