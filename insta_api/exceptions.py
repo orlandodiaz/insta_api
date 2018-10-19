@@ -47,8 +47,10 @@ class ActionBlocked(Exception):
 
 class ServerError(Exception):
     """ Raised when other server errors occur
+
     Status code and message:
         502: HTML doc...
+        500: Oops, an error occurred.
     """
 
 
