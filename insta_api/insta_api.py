@@ -129,6 +129,10 @@ class InstaAPI:
             self.status = resp.status_code
             self.msg = resp.content
             raise
+        except ConnectionResetError as e:
+            log.error('User connection error. Trying again in 1 minute')
+            time.sleep(60)
+
         else:
             if len(resp.text) > 300:
                 log.success('STATUS: {} - CONTENT (truncated): {}'.format(resp.status_code, resp.text[:300]+"..."))
