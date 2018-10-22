@@ -139,6 +139,7 @@ class InstaAPI:
             RESPONSE CONTENT: {}
             
             """.format(self.last_resp.status_code, self.last_resp.headers, self.last_resp.content))
+            raise
 
         else:
             if len(resp.text) > 300:
