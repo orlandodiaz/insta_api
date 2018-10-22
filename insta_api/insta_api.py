@@ -7,8 +7,7 @@ from requests.models import Response
 from log3 import log
 import pickle
 import os
-import insta_api.server_errors
-from insta_api.server_errors import *
+
 
 if __name__ == '__main__':
     from endpoints import *
@@ -16,6 +15,7 @@ if __name__ == '__main__':
     from utils import login_required, logout_required, code_to_media_id, generate_boundary
     from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
                             IncompleteJSON, NoCookiesFound, ServerError)
+    from server_errors import *
 
 else:
     from .endpoints import *
@@ -23,6 +23,8 @@ else:
     from .utils import login_required,logout_required, code_to_media_id, generate_boundary
     from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
                              IncompleteJSON, NoCookiesFound, ServerError)
+    from .server_errors import *
+
 
 class InstaAPI:
 
@@ -35,9 +37,9 @@ class InstaAPI:
         self.ses.headers = {
             'Accept': '*/*',
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept-encoding': 'gzip, deflate, br',
             'Accept-Language': 'en-US',
             'referer': 'https://www.instagram.com/',
-            'x-instagram-gis': 'x_instagram_gis',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.139 Safari/537.36'
         }
@@ -130,8 +132,13 @@ class InstaAPI:
             self.msg = resp.content
             raise
         except ConnectionResetError as e:
-            log.error('User connection error. Trying again in 1 minute')
-            time.sleep(60)
+            log.error('Server closed the connection')
+            log.debug("""
+            STATUS: {}
+            RESPONSE HEADERS: {}
+            RESPONSE CONTENT: {}
+            
+            """.format(self.last_resp.status_code, self.last_resp.headers, self.last_resp.content))
 
         else:
             if len(resp.text) > 300:
