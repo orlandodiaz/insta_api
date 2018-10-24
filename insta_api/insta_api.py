@@ -346,6 +346,10 @@ class InstaAPI:
             # The content-length does not match in some instances
             log.warning('Received an incomplete JSON response')
             raise IncompleteJSON
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in range(500, 600):
+                raise ServerError("An uknown server error ocurred")
+
         else:
             if not data['data']['hashtag']:
                 raise InvalidHashtag("Received no data for hashstag. Please make sure it was entered properly")

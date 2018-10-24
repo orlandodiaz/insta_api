@@ -50,7 +50,10 @@ class ServerError(Exception):
 
     Status code and message:
         502: HTML doc...
+        503: HTML doc...
         500: Oops, an error occurred.
+
+
     """
 
 
