@@ -446,6 +446,23 @@ class InstaAPI:
 
             self._make_request(post_photo_endpoint2, data, msg='Photo uploaded was successfully published')
 
+    def get_hashtag_suggestions(self, query):
+        params = {
+            'context': 'hashtag',
+            'query': query,
+            'include_reel': 'true',
+        }
+        try:
+            resp = self._make_request(search_hashtag_endpoint, params=params, msg="Request was received")
+        except RequestException as e:
+            log.error(e)
+        else:
+            data = resp.json()
+            if data['status'] == 'ok':
+                return data['hashtags']
+            else:
+                log.error('Instagram response data is not ok')
+
     @login_required
     def delete_post(self, inpt):
         """  Delete a post.
