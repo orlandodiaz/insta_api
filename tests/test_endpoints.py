@@ -52,6 +52,10 @@ class TestEndpoints:
         resp = insta.ses.head(base_endpoint+logout_endpoint)
         assert resp.status_code != 404
 
+    def test_hashtag_suggestions_endpoint(self, insta):
+        resp = insta.ses.head(base_endpoint+search_hashtag_endpoint)
+        assert resp.status_code != 404
+
 
 
 

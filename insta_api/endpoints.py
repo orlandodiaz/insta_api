@@ -17,13 +17,11 @@ user_info_endpoint = '/{username}/?__a=1'
 post_info_endpoint = '/{post_id}/?__a=1'
 current_user_endpoint = '/accounts/edit/?__a=1'
 
-
 graphql_endpoint = '/graphql/query/'
 get_userinfo_query = '9ca88e465c3f866a76f7adee3871bdd8'
 get_hashinfo_query = 'ded47faa9a1aaded10161a2ff32abb6b'
 
 challenge_endpoint = '/challenge/{id}/{code}/'
-
 challenge_replay = '/challenge/replay/{id}/{code}/'
 
 search_hashtag_endpoint = '/web/search/topsearch/?context=hashtag'
