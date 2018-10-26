@@ -41,8 +41,9 @@ class InstaAPI:
         self.ses.headers = {
             'Accept': '*/*',
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Accept-encoding': 'gzip, deflate, br',
-            'Accept-Language': 'en-US',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'en-US,en;q=0.9',
+
             'referer': 'https://www.instagram.com/',
             'x-requested-with': 'XMLHttpRequest',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko)'
@@ -481,33 +482,26 @@ class InstaAPI:
 
             m = MultipartEncoder(data, boundary="----WebKitFormBoundary%s" % boundary)
 
-            self.ses.headers.update(
-                {
-                    # 'origin': 'https://www.instagram.com',
-                    'accept-encoding': 'gzip, deflate, br',
-                    'accept-language': 'en-US,en;q=0.9',
-                    'x-requested-with': 'XMLHttpRequest',
-                    'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Mobile Safari/537.36',
-                    'x-instagram-ajax': '43b4c36c01b8',
+            headers = {
                     'content-type': 'multipart/form-data; boundary=----WebKitFormBoundary%s' % boundary,
                     'referer': 'https://www.instagram.com/create/style/',
                 }
-            )
 
-            resp = self._make_request(post_photo_endpoint1, m.to_string(), 'Uploaded photo successfully')
+            resp = self._make_request(post_photo_endpoint1, m.to_string(), headers=headers, msg='Uploaded photo')
+
             upload_id = resp.json()['upload_id']
 
-            self.ses.headers.update({
+            headers = {
                 'content-type': 'application/x-www-form-urlencoded',
                 'referer': 'https://www.instagram.com/create/details/',
-            })
+            }
 
             data = [
                 ('upload_id', str(upload_id)),
                 ('caption', caption),
             ]
 
-            self._make_request(post_photo_endpoint2, data, msg='Photo uploaded was successfully published')
+            self._make_request(post_photo_endpoint2, data, headers=headers, msg='Photo published')
 
     def get_hashtag_suggestions(self, query):
         params = {
