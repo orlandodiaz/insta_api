@@ -43,7 +43,6 @@ class InstaAPI:
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'en-US,en;q=0.9',
-
             'referer': 'https://www.instagram.com/',
             'x-requested-with': 'XMLHttpRequest',
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko)'
@@ -165,6 +164,8 @@ class InstaAPI:
             self.last_resp = resp
             self.status = resp.status_code
             self.msg = resp.content
+            if msg:
+                log.info(msg)
 
             return resp
 
