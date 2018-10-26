@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="insta_api",
-    version="0.2.0",
+    version="0.2.1",
     author="Orlando Diaz",
     author_email="orlandodiaz.dev@gmail.com",
     description="Unofficial instagram API",
