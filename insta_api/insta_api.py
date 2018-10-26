@@ -5,9 +5,11 @@ from requests_toolbelt import MultipartEncoder
 from json import JSONDecodeError
 from requests.models import Response
 from log3 import log
+import hashlib
 import pickle
 import os
-
+import re
+import json
 
 if __name__ == '__main__':
     from endpoints import *
@@ -33,14 +35,17 @@ class InstaAPI:
 
         self.ses = requests.Session()
 
-        # self.ses.verify = "charles-ssl-proxying-certificate.pem"
+        # self.ses.verify = "charles-ssl-proxying-certificate.pem" # Use when charles is open
+
+        # Default headers. These will persist throughout all requests
         self.ses.headers = {
             'Accept': '*/*',
             'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'Accept-encoding': 'gzip, deflate, br',
             'Accept-Language': 'en-US',
             'referer': 'https://www.instagram.com/',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) '
+            'x-requested-with': 'XMLHttpRequest',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko)'
                           'Chrome/66.0.3359.139 Safari/537.36'
         }
         self.user_data = None
@@ -50,6 +55,8 @@ class InstaAPI:
         self.msg = None
         self.username = None
         self.use_cookies=use_cookies
+
+        self.rhx_gis = None
 
         if os.path.isfile('cookies') and use_cookies:
             self._load_cookies()
@@ -96,7 +103,7 @@ class InstaAPI:
 
         log.debug("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
 
-    def _make_request(self, endpoint, data=None, params=None, msg='', post=False):
+    def _make_request(self, endpoint, data=None, params=None, msg='', post=False, headers=None):
         """ Shorthand way to make a request.
 
         Args:
@@ -110,15 +117,22 @@ class InstaAPI:
             Response: Requests response object
 
         """
-
         resp = None
+        # headers=headers
+
+        # Combine persistent headers with new headers temporarily
+        if headers:
+            headers = {**self.ses.headers, **headers}
+        else:
+            headers = self.ses.headers
+
         try:
             if not data and not post:
-                resp = self.ses.get(base_endpoint + endpoint, headers=self.ses.headers, params=params)
+                resp = self.ses.get(base_endpoint + endpoint, headers=headers, params=params)
                 resp.raise_for_status()
             else:
                 resp = self.ses.post(base_endpoint + endpoint, data=data,
-                                     headers=self.ses.headers, allow_redirects=False)
+                                     headers=headers, allow_redirects=False)
                 resp.raise_for_status()
 
         except RequestException as ex:
@@ -158,23 +172,56 @@ class InstaAPI:
 
         self.ses.close()
 
-    def _get_init_csrftoken(self):
-        """ Get initial csrftoken from the main website.
+    def get_instagram_gis(self, params):
+        """ Returns a generated gis to be used in request headers"""
 
-        If already logged in, maybe because of a cookie, copy that cookie to the headers
-        The csrf token is needed to be in the headers for most API calls"""
+        if not self.rhx_gis:
+            self.get_rhx_gis()
+
+        # Stringify
+
+        stringified = json.dumps(params)
+        log.info("STRINGIFIED: {}".format(stringified))
+
+        unhashed_gis = "{}:{}".format(self.rhx_gis, stringified)
+
+        unhashed_gis = unhashed_gis.encode('utf-8')
+
+        log.info("Unhashed gis: {}".format(unhashed_gis))
+
+        encoded_gis = hashlib.md5(unhashed_gis).hexdigest()
+
+        return encoded_gis
+
+    def get_rhx_gis(self):
+        """ Scrape rhx_gis from main website """
+
+        resp = self._make_request('')
+
+        ptrn = re.compile('("rhx_gis"):"([a-zA-Z0-9]*)')
+
+        match = ptrn.search(resp.text)
+
+        rhx_gis = match.group(2)
+
+        self.rhx_gis = rhx_gis
+
+        return rhx_gis
+
+    def _get_init_csrftoken(self):
+        """ Get initial csrftoken through cookies.
+
+        All endpoints that require user-authentication require a `x-csrftoken` header in the headers.
+        The `csrftoken` can be obtained through the cookie response."""
 
         if not self.is_loggedin:
             visit_resp = self._make_request('', msg='Visit was successful.')
+
             assert 'csrftoken' in visit_resp.cookies.get_dict()
             self.ses.headers.update({'x-csrftoken': visit_resp.cookies['csrftoken']})
 
         else:
             self.ses.headers.update({'x-csrftoken': self.ses.cookies.get_dict()['csrftoken']})
-
-
-        # log.debug("Session headers: {}".format(self.ses.headers))
-        # log.debug("Cookies: {}".format(self.ses.cookies.get_dict()))
 
     @logout_required
     def login(self, username, password):
@@ -198,7 +245,6 @@ class InstaAPI:
             log.info("Logging in as {}".format(username))
             self._make_request(login_endpoint, data=login_data, msg="Login request sent")
         except requests.exceptions.HTTPError:
-
 
             resp_data = self.last_resp.json()
             if resp_data['message'] == 'checkpoint_required':
@@ -265,6 +311,7 @@ class InstaAPI:
 
         try:
             self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
+
         except requests.HTTPError as e:
             if e.response.text == 'missing media':
                 raise MissingMedia("The post you are trying to like has most likely been removed")
@@ -320,32 +367,48 @@ class InstaAPI:
 
         self.unfollow_by_id(self.get_user_info(username)['id'])
 
-    @login_required
     def get_hash_feed(self, hashtag, pages=4):
         """ Get hashtag feed
 
         Args:
             hashtag (str): The hashtag to be used. Ex. #love, #fashion, #beautiful, etc
+                           Don't put the pound sign
+
             pages (int): The number of pages to crawl. Recommended to not go above four
+
         Returns:
             dict: Hashtag dictionary containing information about a specific hash
 
         """
+        variables = {
+            'tag_name': hashtag,
+            'first': pages,
+        }
 
         params = {
             'query_hash': get_hashinfo_query,
-            'variables': '{"tag_name": "%s", "first": %d}' % (hashtag, pages)
+            'variables': json.dumps(variables)
         }
 
-        resp = self._make_request(graphql_endpoint, params=params, msg='Hash feed was received')
+        instagram_gis = self.get_instagram_gis(variables)
+
+        log.debug('Used gis %s' % instagram_gis)
+
+        headers = {
+            'x-instagram-gis': instagram_gis
+        }
+
+        resp = self._make_request(graphql_endpoint, params=params, headers=headers, msg='Hash feed was received')
 
         try:
             data = resp.json()  # => Possible JSONDecoderror
+
         except JSONDecodeError:
             # Server might return incomplete JSON response or requests might be truncating them.
             # The content-length does not match in some instances
             log.warning('Received an incomplete JSON response')
             raise IncompleteJSON
+
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in range(500, 600):
                 raise ServerError("An uknown server error ocurred")
