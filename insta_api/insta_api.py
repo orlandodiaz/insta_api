@@ -1,15 +1,16 @@
+import os
 import time
+import re
+import hashlib
+import pickle
+import json
+from json import JSONDecodeError
+from log3 import log
 import requests
 from requests import RequestException
 from requests_toolbelt import MultipartEncoder
-from json import JSONDecodeError
 from requests.models import Response
-from log3 import log
-import hashlib
-import pickle
-import os
-import re
-import json
+
 
 if __name__ == '__main__':
     from endpoints import *
@@ -213,8 +214,13 @@ class InstaAPI:
     def _get_init_csrftoken(self):
         """ Get initial csrftoken through cookies.
 
-        All endpoints that require user-authentication require a `x-csrftoken` header in the headers.
-        The `csrftoken` can be obtained through the cookie response."""
+        The login form requires an initial CSRF (Cross-site-Request-Forgery) token. This can be be
+        obtained by looking at the cookie response for the Instagram page or by scraping it from
+        the `window._sharedData` object
+
+        The CSRF token is expected in the request headers as `x-csrftoken` as well as the in the request cookies
+
+        """
 
         if not self.is_loggedin:
             visit_resp = self._make_request('', msg='Visit was successful.')
@@ -228,6 +234,10 @@ class InstaAPI:
     @logout_required
     def login(self, username, password):
         """Login to instagram.
+
+        A new  CSRF token cookie is generated after an authenticated login request.
+        This token is reused throughout the session. It should be in the request
+        cookies and in the header `x-csrftoken` for all subsequent POST sensitive requests
 
         Args:
             username (str): Your instagram username
@@ -371,6 +381,8 @@ class InstaAPI:
 
     def get_hash_feed(self, hashtag, pages=4):
         """ Get hashtag feed
+
+        Login is NOT required for this endpoint
 
         Args:
             hashtag (str): The hashtag to be used. Ex. #love, #fashion, #beautiful, etc
