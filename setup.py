@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="insta_api",
-    version="0.2.2",
+    version="0.2.3",
     author="Orlando Diaz",
     author_email="orlandodiaz.dev@gmail.com",
     description="Unofficial instagram API",
@@ -18,6 +18,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires = ['requests>=2.19.1', 'requests-toolbelt>=0.8.0', 'log3>=0.1.6']
+    install_requires = ['requests>=2.20.0', 'requests-toolbelt>=0.8.0', 'log3>=0.1.6']
 
 )
