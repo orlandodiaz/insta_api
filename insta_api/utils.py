@@ -1,6 +1,8 @@
 from functools import wraps
 import string
 import random
+
+
 def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -18,6 +20,7 @@ def logout_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
+
 def media_id_to_code(media_id):
     alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
     short_code = ''
@@ -27,10 +30,11 @@ def media_id_to_code(media_id):
         short_code = alphabet[remainder] + short_code
     return short_code
 
+
 def code_to_media_id(shortcode):
     """ Converts shortcode to media_id"""
 
-    alphabet = {char:i for i, char in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_')}
+    alphabet = {char: i for i, char in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_')}
 
     media_id = 0
     for char in shortcode:
@@ -38,9 +42,10 @@ def code_to_media_id(shortcode):
 
     return media_id
 
+
 def generate_boundary():
     letters = string.ascii_letters+string.digits
     boundary = ''
     for i in range(0, 16):
-        boundary+=random.choice(letters)
+        boundary += random.choice(letters)
     return boundary
