@@ -16,12 +16,8 @@ def insta():
 class TestInstaAPI:
     """ You must be logged in to run the tests. Login is assumed to work"""
 
-
-
-
     def test_like(self, insta):
         """ Test the like is working"""
-
 
         insta.like('BoLcMrelK4k')
 
@@ -85,6 +81,3 @@ class TestInstaAPI:
         hashtag_data = insta.get_hash_feed('test')
 
         assert hashtag_data
-
-
-
