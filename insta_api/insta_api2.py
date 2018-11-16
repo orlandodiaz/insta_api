@@ -11,20 +11,21 @@ from requests import RequestException
 from requests_toolbelt import MultipartEncoder
 from requests.models import Response
 
-
 if __name__ == '__main__':
     from endpoints import *
     # from config import log
     from utils import login_required, logout_required, code_to_media_id, generate_boundary
-    from exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
+    from exceptions import (LoginAuthenticationError, InvalidHashtag,
+                            CheckpointRequired, MissingMedia, ActionBlocked,
                             IncompleteJSON, NoCookiesFound, ServerError)
     from server_errors import *
 
 else:
     from .endpoints import *
     # from .config import log
-    from .utils import login_required,logout_required, code_to_media_id, generate_boundary
-    from .exceptions import (LoginAuthenticationError, InvalidHashtag, CheckpointRequired, MissingMedia, ActionBlocked,
+    from .utils import login_required, logout_required, code_to_media_id, generate_boundary
+    from .exceptions import (LoginAuthenticationError, InvalidHashtag,
+                             CheckpointRequired, MissingMedia, ActionBlocked,
                              IncompleteJSON, NoCookiesFound, ServerError)
     from .server_errors import *
 
@@ -46,8 +47,9 @@ class InstaAPI:
             'Accept-Language': 'en-US,en;q=0.9',
             'referer': 'https://www.instagram.com/',
             'x-requested-with': 'XMLHttpRequest',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko)'
-                          'Chrome/66.0.3359.139 Safari/537.36'
+            'User-Agent':
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko)'
+                'Chrome/66.0.3359.139 Safari/537.36'
         }
         self.user_data = None
 
@@ -55,7 +57,7 @@ class InstaAPI:
         self.status = None
         self.msg = None
         self.username = None
-        self.use_cookies=use_cookies
+        self.use_cookies = use_cookies
 
         self.rhx_gis = None
 
@@ -70,7 +72,8 @@ class InstaAPI:
         """ Get the current username"""
 
         if not self.username:
-            resp = self._make_request(current_user_endpoint, params={'__a': '1'})
+            resp = self._make_request(
+                current_user_endpoint, params={'__a': '1'})
             user_info = resp.json()['form_data']
             username = user_info['username']
             self.username = username
@@ -104,7 +107,13 @@ class InstaAPI:
 
         log.debug("SESSION COOKIES: {}".format(self.ses.cookies.get_dict()))
 
-    def _make_request(self, endpoint, data=None, params=None, msg='', post=False, headers=None):
+    def _make_request(self,
+                      endpoint,
+                      data=None,
+                      params=None,
+                      msg='',
+                      post=False,
+                      headers=None):
         """ Shorthand way to make a request.
 
         Args:
@@ -129,18 +138,24 @@ class InstaAPI:
 
         try:
             if not data and not post:
-                resp = self.ses.get(base_endpoint + endpoint, headers=headers, params=params)
+                resp = self.ses.get(
+                    base_endpoint + endpoint, headers=headers, params=params)
                 resp.raise_for_status()
             else:
-                resp = self.ses.post(base_endpoint + endpoint, data=data,
-                                     headers=headers, allow_redirects=False)
+                resp = self.ses.post(
+                    base_endpoint + endpoint,
+                    data=data,
+                    headers=headers,
+                    allow_redirects=False)
                 resp.raise_for_status()
 
         except RequestException as ex:
             if len(resp.text) > 300:
-                log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
+                log.error('STATUS: {} - CONTENT: {}'.format(
+                    resp.status_code, resp.text))
             else:
-                log.error('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))
+                log.error('STATUS: {} - CONTENT: {}'.format(
+                    resp.status_code, resp.text))
 
             self.last_resp = resp
             self.status = resp.status_code
@@ -153,14 +168,17 @@ class InstaAPI:
             RESPONSE HEADERS: {}
             RESPONSE CONTENT: {}
             
-            """.format(self.last_resp.status_code, self.last_resp.headers, self.last_resp.content))
+            """.format(self.last_resp.status_code, self.last_resp.headers,
+                       self.last_resp.content))
             raise
 
         else:
             if len(resp.text) > 300:
-                log.success('STATUS: {} - CONTENT (truncated): {}'.format(resp.status_code, resp.text[:300]+"..."))
+                log.success('STATUS: {} - CONTENT (truncated): {}'.format(
+                    resp.status_code, resp.text[:300] + "..."))
             else:
-                log.success('STATUS: {} - CONTENT: {}'.format(resp.status_code, resp.text))            # log.info(msg)
+                log.success('STATUS: {} - CONTENT: {}'.format(
+                    resp.status_code, resp.text))  # log.info(msg)
 
             self.last_resp = resp
             self.status = resp.status_code
@@ -226,10 +244,14 @@ class InstaAPI:
             visit_resp = self._make_request('', msg='Visit was successful.')
 
             assert 'csrftoken' in visit_resp.cookies.get_dict()
-            self.ses.headers.update({'x-csrftoken': visit_resp.cookies['csrftoken']})
+            self.ses.headers.update({
+                'x-csrftoken': visit_resp.cookies['csrftoken']
+            })
 
         else:
-            self.ses.headers.update({'x-csrftoken': self.ses.cookies.get_dict()['csrftoken']})
+            self.ses.headers.update({
+                'x-csrftoken': self.ses.cookies.get_dict()['csrftoken']
+            })
 
     @logout_required
     def login(self, username, password):
@@ -255,7 +277,8 @@ class InstaAPI:
 
         try:
             log.info("Logging in as {}".format(username))
-            self._make_request(login_endpoint, data=login_data, msg="Login request sent")
+            self._make_request(
+                login_endpoint, data=login_data, msg="Login request sent")
         except requests.exceptions.HTTPError:
 
             resp_data = self.last_resp.json()
@@ -269,9 +292,13 @@ class InstaAPI:
 
                 self._make_request(checkpoint_url)
 
-                log.debug(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code))
-                self._make_request(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code),
-                                                             data={'choice':'1'})
+                log.debug(
+                    challenge_endpoint.format(
+                        id=checkpoint_id, code=checkpoint_code))
+                self._make_request(
+                    challenge_endpoint.format(
+                        id=checkpoint_id, code=checkpoint_code),
+                    data={'choice': '1'})
 
                 msg = """
                 Instagram has flagged this login as suspicious. You are either signing in from an unknown IP
@@ -281,12 +308,20 @@ class InstaAPI:
                 log.error(msg)
 
                 while True:
-                    verification_code = input("Enter the six-digit verification code. Type REPLAY to request another one: ")
+                    verification_code = input(
+                        "Enter the six-digit verification code. Type REPLAY to request another one: "
+                    )
 
                     if verification_code == 'REPLAY':
-                        self._make_request(challenge_replay.format(id=checkpoint_id, code=checkpoint_code), post=True)
+                        self._make_request(
+                            challenge_replay.format(
+                                id=checkpoint_id, code=checkpoint_code),
+                            post=True)
                     else:
-                        self._make_request(challenge_endpoint.format(id=checkpoint_id, code=checkpoint_code), data={'security_code': verification_code})
+                        self._make_request(
+                            challenge_endpoint.format(
+                                id=checkpoint_id, code=checkpoint_code),
+                            data={'security_code': verification_code})
                         break
 
                 if self.is_loggedin:
@@ -294,7 +329,8 @@ class InstaAPI:
 
                     # Store cookies
                     with open('cookies', 'wb+') as file:
-                        log.debug('Saving cookies {}'.format(self.ses.cookies.get_dict()))
+                        log.debug('Saving cookies {}'.format(
+                            self.ses.cookies.get_dict()))
                         pickle.dump(self.ses.cookies, file)
                 else:
                     raise LoginAuthenticationError
@@ -303,7 +339,9 @@ class InstaAPI:
 
             if resp_data['authenticated']:
                 log.info('Logged in successfully')
-                self.ses.headers.update({'x-csrftoken': self.last_resp.cookies['csrftoken']})
+                self.ses.headers.update({
+                    'x-csrftoken': self.last_resp.cookies['csrftoken']
+                })
                 assert 'sessionid' in self.ses.cookies.get_dict()
                 self._save_cookies()
                 self.username = username
@@ -322,13 +360,19 @@ class InstaAPI:
             log.debug(media_id)
 
         try:
-            self._make_request(like_endpoint.format(media_id=media_id), post=True, msg='Liked %s' % media_id)
+            self._make_request(
+                like_endpoint.format(media_id=media_id),
+                post=True,
+                msg='Liked %s' % media_id)
 
         except requests.HTTPError as e:
             if e.response.text == 'missing media':
-                raise MissingMedia("The post you are trying to like has most likely been removed")
+                raise MissingMedia(
+                    "The post you are trying to like has most likely been removed"
+                )
 
-            if e.response.status_code == 400 and e.response.text == action_blocked['text']:
+            if e.response.status_code == 400 and e.response.text == action_blocked[
+                    'text']:
                 raise ActionBlocked(" This action was blocked")
 
             elif e.response.status_code in range(500, 600):
@@ -345,14 +389,20 @@ class InstaAPI:
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
 
-        self._make_request(unlike_endpoint.format(media_id=media_id), post=True, msg='Unliked %s' % media_id)
+        self._make_request(
+            unlike_endpoint.format(media_id=media_id),
+            post=True,
+            msg='Unliked %s' % media_id)
 
     @login_required
     def follow_by_id(self, user_id):
         """ Follow an user by their unique id, not their username!"""
 
         print(self.ses.cookies.get_dict())
-        self._make_request(follow_endpoint.format(user_id=user_id), post=True, msg='Followed %s' % user_id)
+        self._make_request(
+            follow_endpoint.format(user_id=user_id),
+            post=True,
+            msg='Followed %s' % user_id)
 
     @login_required
     def follow(self, username):
@@ -371,7 +421,10 @@ class InstaAPI:
         """ Unfollow an user by their unique id, not their username!"""
 
         print(self.ses.cookies.get_dict())
-        self._make_request(unfollow_endpoint.format(user_id=user_id), post=True, msg='Unfollowed %s' % user_id)
+        self._make_request(
+            unfollow_endpoint.format(user_id=user_id),
+            post=True,
+            msg='Unfollowed %s' % user_id)
 
     @login_required
     def unfollow_by_name(self, username):
@@ -408,11 +461,13 @@ class InstaAPI:
 
         log.debug('Used gis %s' % instagram_gis)
 
-        headers = {
-            'x-instagram-gis': instagram_gis
-        }
+        headers = {'x-instagram-gis': instagram_gis}
 
-        resp = self._make_request(graphql_endpoint, params=params, headers=headers, msg='Hash feed was received')
+        resp = self._make_request(
+            graphql_endpoint,
+            params=params,
+            headers=headers,
+            msg='Hash feed was received')
 
         try:
             data = resp.json()  # => Possible JSONDecoderror
@@ -429,7 +484,9 @@ class InstaAPI:
 
         else:
             if not data['data']['hashtag']:
-                raise InvalidHashtag("Received no data for hashstag. Please make sure it was entered properly")
+                raise InvalidHashtag(
+                    "Received no data for hashstag. Please make sure it was entered properly"
+                )
 
             return data['data']['hashtag']['edge_hashtag_to_media']['edges']
 
@@ -443,7 +500,9 @@ class InstaAPI:
             dict: JSON decoded response
         """
 
-        resp = self._make_request(user_info_endpoint.format(username=username), msg='User info data received')
+        resp = self._make_request(
+            user_info_endpoint.format(username=username),
+            msg='User info data received')
         return resp.json()['graphql']['user']
 
     @login_required
@@ -459,12 +518,14 @@ class InstaAPI:
 
         params = {
             'query_hash': get_userinfo_query,
-            'variables': '{"user_id": "%s", "include_chaining": true, "include_reel": true,'
-                         ' "include_suggested_users": false, "include_logged_out_extras": false,'
-                         ' "include_highlight_reels": false}' % user_id
+            'variables':
+                '{"user_id": "%s", "include_chaining": true, "include_reel": true,'
+                ' "include_suggested_users": false, "include_logged_out_extras": false,'
+                ' "include_highlight_reels": false}' % user_id
         }
 
-        resp = self._make_request(graphql_endpoint, params=params, msg='User info data received')
+        resp = self._make_request(
+            graphql_endpoint, params=params, msg='User info data received')
 
         self.user_data = resp.json()['data']['user']['reel']['owner']
 
@@ -476,6 +537,8 @@ class InstaAPI:
 
         Args:
             photo_path (str): Path to photo
+
+
             caption (str): The caption for the photo to be posted
 
         Examples:
@@ -488,19 +551,28 @@ class InstaAPI:
         with open(photo_path, 'rb') as photo:
             upload_id = str(int(time.time() * 1000))
 
-            data = {'upload_id': upload_id,
-                    'photo': ('photo.jpg', photo, 'image/jpeg')}
+            data = {
+                'upload_id': upload_id,
+                'photo': ('photo.jpg', photo, 'image/jpeg')
+            }
 
             boundary = generate_boundary()
 
-            m = MultipartEncoder(data, boundary="----WebKitFormBoundary%s" % boundary)
+            m = MultipartEncoder(
+                data, boundary="----WebKitFormBoundary%s" % boundary)
 
             headers = {
-                    'content-type': 'multipart/form-data; boundary=----WebKitFormBoundary%s' % boundary,
-                    'referer': 'https://www.instagram.com/create/style/',
-                }
+                'content-type':
+                    'multipart/form-data; boundary=----WebKitFormBoundary%s' %
+                    boundary,
+                'referer': 'https://www.instagram.com/create/style/',
+            }
 
-            resp = self._make_request(post_photo_endpoint1, m.to_string(), headers=headers, msg='Uploaded photo')
+            resp = self._make_request(
+                post_photo_endpoint1,
+                m.to_string(),
+                headers=headers,
+                msg='Uploaded photo')
 
             upload_id = resp.json()['upload_id']
 
@@ -514,7 +586,11 @@ class InstaAPI:
                 ('caption', caption),
             ]
 
-            self._make_request(post_photo_endpoint2, data, headers=headers, msg='Photo published')
+            self._make_request(
+                post_photo_endpoint2,
+                data,
+                headers=headers,
+                msg='Photo published')
 
     def get_hashtag_suggestions(self, query):
         params = {
@@ -523,7 +599,10 @@ class InstaAPI:
             'include_reel': 'true',
         }
         try:
-            resp = self._make_request(search_hashtag_endpoint, params=params, msg="Request was received")
+            resp = self._make_request(
+                search_hashtag_endpoint,
+                params=params,
+                msg="Request was received")
         except RequestException as e:
             log.error(e)
         else:
@@ -545,9 +624,15 @@ class InstaAPI:
         if isinstance(inpt, str) and not inpt.isdigit():
             media_id = code_to_media_id(inpt)
 
-            self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
+            self._make_request(
+                delete_endpoint.format(media_id=media_id),
+                post=True,
+                msg='Deleted %s' % media_id)
         else:
-            self._make_request(delete_endpoint.format(media_id=media_id), post=True, msg='Deleted %s' % media_id)
+            self._make_request(
+                delete_endpoint.format(media_id=media_id),
+                post=True,
+                msg='Deleted %s' % media_id)
 
     def logout(self):
         """ Logout current user. All other API calls will not work after this method is called"""
@@ -561,4 +646,5 @@ class InstaAPI:
 
 if __name__ == '__main__':
     # Play with the API here
+
     pass
