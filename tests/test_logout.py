@@ -2,6 +2,7 @@ from insta_api.insta_api import InstaAPI
 from tests.testing_config import username, password
 import time
 
+
 def test_logout():
     insta = InstaAPI(use_cookies=False)
     insta.login(username, password)
