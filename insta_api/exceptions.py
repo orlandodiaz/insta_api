@@ -63,4 +63,3 @@ class IncompleteJSON(Exception):
 
 class NoCookiesFound(Exception):
     """ Raised when no cookies are found in the system"""
-
