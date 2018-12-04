@@ -200,9 +200,12 @@ class InstaAPI:
             self.get_rhx_gis()
 
         # Stringify
-
-        stringified = json.dumps(params)
-        log.info("STRINGIFIED: {}".format(stringified))
+        stringified = None
+        if isinstance(params, dict):
+            stringified = json.dumps(params)
+            log.info("STRINGIFIED: {}".format(stringified))
+        else:
+            stringified = params
 
         unhashed_gis = "{}:{}".format(self.rhx_gis, stringified)
 
@@ -490,7 +493,6 @@ class InstaAPI:
 
             return data['data']['hashtag']['edge_hashtag_to_media']['edges']
 
-    @login_required
     def get_user_info(self, username):
         """  Gets information about an user
 
@@ -500,9 +502,17 @@ class InstaAPI:
             dict: JSON decoded response
         """
 
+        variables = '/{}/'.format(username)
+        instagram_gis = self.get_instagram_gis(variables)
+
+        log.debug('Used gis %s' % instagram_gis)
+
+        headers = {'x-instagram-gis': instagram_gis}
+
         resp = self._make_request(
             user_info_endpoint.format(username=username),
-            msg='User info data received')
+            msg='User info data received',
+            headers=headers)
         return resp.json()['graphql']['user']
 
     @login_required
