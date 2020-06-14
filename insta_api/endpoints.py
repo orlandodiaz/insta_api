@@ -1,4 +1,7 @@
 base_endpoint = 'https://www.instagram.com'
+
+shared_data = '/data/shared_data/'
+
 login_endpoint = '/accounts/login/ajax/'
 logout_endpoint = '/accounts/logout/'
 explore_tag = '/explore/tags/{hashtag}/'

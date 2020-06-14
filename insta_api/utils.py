@@ -4,7 +4,6 @@ import random
 
 
 def login_required(fn):
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if not args[0].is_loggedin:
@@ -15,7 +14,6 @@ def login_required(fn):
 
 
 def logout_required(fn):
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if args[0].is_loggedin:
@@ -56,3 +54,7 @@ def generate_boundary():
     for i in range(0, 16):
         boundary += random.choice(letters)
     return boundary
+
+
+def encrypt_password_version_0(password):
+    return f'#PWD_INSTAGRAM_BROWSER:0:0:{password}'

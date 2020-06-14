@@ -14,19 +14,19 @@ from requests.models import Response
 if __name__ == '__main__':
     from endpoints import *
     # from config import log
-    from utils import login_required, logout_required, code_to_media_id, generate_boundary
+    from utils import login_required, logout_required, code_to_media_id, generate_boundary, encrypt_password_version_0
     from exceptions import (LoginAuthenticationError, InvalidHashtag,
                             CheckpointRequired, MissingMedia, ActionBlocked,
-                            IncompleteJSON, NoCookiesFound, ServerError)
+                            IncompleteJSON, NoCookiesFound, ServerError, NoResponseError)
     from server_errors import *
 
 else:
     from .endpoints import *
     # from .config import log
-    from .utils import login_required, logout_required, code_to_media_id, generate_boundary
+    from .utils import login_required, logout_required, code_to_media_id, generate_boundary, encrypt_password_version_0
     from .exceptions import (LoginAuthenticationError, InvalidHashtag,
                              CheckpointRequired, MissingMedia, ActionBlocked,
-                             IncompleteJSON, NoCookiesFound, ServerError)
+                             IncompleteJSON, NoCookiesFound, ServerError, NoResponseError)
     from .server_errors import *
 
 
@@ -60,6 +60,8 @@ class InstaAPI:
         self.use_cookies = use_cookies
 
         self.rhx_gis = None
+        self.key_id = None
+        self.public_key = None
 
         if os.path.isfile('cookies') and use_cookies:
             self._load_cookies()
@@ -232,6 +234,21 @@ class InstaAPI:
 
         return rhx_gis
 
+    def fetch_crypto_data(self):
+        """ Scrapes key_id and public_key from base URL javascript files """
+
+        resp = self._make_request(shared_data)
+
+        data = resp.json()
+
+        self.key_id = data['encryption']['key_id']
+        self.public_key = data['encryption']['public_key']
+
+        print("public key", self.public_key)
+        print("key id", self.key_id)
+
+
+
     def _get_init_csrftoken(self):
         """ Get initial csrftoken through cookies.
 
@@ -275,14 +292,18 @@ class InstaAPI:
         """
 
         self._get_init_csrftoken()
+        self.fetch_crypto_data()
 
-        login_data = {'username': username, 'password': password}
+        login_data = {'username': username, 'enc_password': encrypt_password_version_0(password)}
 
         try:
             log.info("Logging in as {}".format(username))
             self._make_request(
                 login_endpoint, data=login_data, msg="Login request sent")
         except requests.exceptions.HTTPError:
+
+            if not self.last_resp:
+                raise NoResponseError("Received no response from Instagram server")
 
             resp_data = self.last_resp.json()
             if resp_data['message'] == 'checkpoint_required':
@@ -379,7 +400,7 @@ class InstaAPI:
                 raise ActionBlocked(" This action was blocked")
 
             elif e.response.status_code in range(500, 600):
-                raise ServerError("An uknown server error ocurred")
+                raise ServerError("An unknown server error occurred")
 
         except requests.RequestException:
             raise
@@ -460,16 +481,15 @@ class InstaAPI:
             'variables': json.dumps(variables)
         }
 
-        instagram_gis = self.get_instagram_gis(variables)
+        # instagram_gis = self.get_instagram_gis(variables)
 
-        log.debug('Used gis %s' % instagram_gis)
+        # log.debug('Used gis %s' % instagram_gis)
 
-        headers = {'x-instagram-gis': instagram_gis}
+        # headers = {'x-instagram-gis': instagram_gis}
 
         resp = self._make_request(
             graphql_endpoint,
             params=params,
-            headers=headers,
             msg='Hash feed was received')
 
         try:
@@ -503,16 +523,15 @@ class InstaAPI:
         """
 
         variables = '/{}/'.format(username)
-        instagram_gis = self.get_instagram_gis(variables)
+        # instagram_gis = self.get_instagram_gis(variables)
 
-        log.debug('Used gis %s' % instagram_gis)
+        # log.debug('Used gis %s' % instagram_gis)
 
-        headers = {'x-instagram-gis': instagram_gis}
+        # headers = {'x-instagram-gis': instagram_gis}
 
         resp = self._make_request(
             user_info_endpoint.format(username=username),
-            msg='User info data received',
-            headers=headers)
+            msg='User info data received')
         return resp.json()['graphql']['user']
 
     @login_required
@@ -656,5 +675,4 @@ class InstaAPI:
 
 if __name__ == '__main__':
     # Play with the API here
-
     pass

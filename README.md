@@ -3,9 +3,19 @@
 [![image](https://img.shields.io/pypi/pyversions/insta_api.svg)](https://pypi.org/project/insta_api/)
 ![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
 
-**insta_api** is a pythonic (unofficial) instagram client. It has been backwards
- engineered from the ground up. Currently it supports essential behavior such as liking,
- following other users, as well as posting photos.
+**insta_api** is an Unofficial Instagram client for Instagram's Unofficial API. It's using backwards engineered endpoints.
+
+
+ **NOTE**: Uploading photos functionality has been deprecated by Instagram. Everything else works
+ 
+ Supports liking, following other users, as well as posting photos.
+ 
+## Changelog
+- 6/14/20 - Update broken endpoints
+    - Passwords are now encrypted to conform to the new API login standard
+    - rhx_gis is not needed anymore and has been removed from all endpoint headers
+    - Updates to README
+    - Other small changes
 
 ## Installation
 
@@ -47,22 +57,27 @@ For example, to like by username:
 
     insta.follow(my_username)
 
-## And more...
-See the documentation for more info.
+## Unit testing
+TBD
 
-## Testing
-You must set up your own testing server, like Jenkins, for example. This is because
-instagram will block any of the online CI integration tools due to the nature of
-their dynamic IPs
+## Integration Testing
+It is recommended to do a complete integration test before using this library. Due to this hitting an unofficial API
+there's no guarantee the endpoints wont be deprecated by the Instagram team in the near future.
 
-You should also configure your testing instagram credentials by adding the `INSTA_API_USER`
- and `INSTA_API_PASSWORD` environmental variables to your isolated testing system.
+Configure your testing Instagram credentials by adding the `INSTA_API_USER`
+and `INSTA_API_PASSWORD` environmental variables into your system.
+
+Run tests with pytest:
+
+    python -m pytest
+
+
 
 ## Author(s)
 * [orlandodiaz](https://github.com/orlandodiaz)
 
 ## Copyright
-Copyright (c) 2013 Orlando Diaz
+Copyright (c) 2020 Orlando Diaz
 
 For more info see LICENSE
 
